@@ -8,7 +8,7 @@
 #define T_TEMP            "zal.tiempieratura"
 #define T_HUMID           "zal.vlazhnost"
 #define LEDBLUE 2
-#define DHT11_PIN 2
+#define DHT11_PIN 4
 #define DHTTYPE DHT11
 
 WiFiClient WiFiClient;

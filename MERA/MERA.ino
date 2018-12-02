@@ -7,6 +7,7 @@
 #define T_CLIENTSTATUS    "clientStatus"
 #define T_COMMAND         "kitchen.lamp-on-the-kitchen-1"
 #define LEDBLUE 2
+#define RELAY   4
 
 WiFiClient WiFiClient;
 
@@ -15,6 +16,8 @@ PubSubClient client(WiFiClient);
 void setup() {
 
   pinMode(LEDBLUE, OUTPUT);
+  pinMode(RELAY, OUTPUT);
+  digitalWrite(RELAY, LOW);
   digitalWrite(LEDBLUE, HIGH);
   Serial.begin(9600);
   delay(100);
@@ -49,8 +52,10 @@ void loop() {
     digitalWrite(LEDBLUE, LOW);
     if (client.connect("", MQTT_USERNAME, MQTT_KEY)) {
       digitalWrite(LEDBLUE, HIGH);
-      Serial.println("connected");
+      Serial.println("connected");     
+      client.publish(USERNAME PREAMBLE T_COMMAND, "ON");
       client.subscribe(USERNAME PREAMBLE T_COMMAND, 1);
+      
     } else {
       Serial.print("failed, rc=");
       Serial.print(client.state());
@@ -74,8 +79,8 @@ void callback(char* topic, byte * data, unsigned int length) {
   }
   Serial.println();
   if (memcmp(data, "OFF", length) == 0)  {    
-    digitalWrite(LEDBLUE, HIGH);
+    digitalWrite(RELAY, HIGH);
   } else if(memcmp(data, "ON", length) == 0){    
-    digitalWrite(LEDBLUE, LOW);
+    digitalWrite(RELAY, LOW);
   }
 }
