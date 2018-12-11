@@ -1,11 +1,12 @@
 #include <ESP8266WiFi.h>
+
 #include <PubSubClient.h>
+#include <ESP8266HTTPClient.h>
 #include <Adafruit_credentials.h> 
 
-#define USERNAME          "Trojan52/"
-#define PREAMBLE          "feeds/"
-#define T_CLIENTSTATUS    "clientStatus"
-#define T_COMMAND         "kitchen.lamp-on-the-kitchen-1"
+String USERNAME = "Trojan52/";
+String PREAMBLE = "feeds/";
+String T_COMMAND = "kitchen.udlinnitiel";
 #define LEDBLUE 2
 #define RELAY   4
 
@@ -14,7 +15,7 @@ WiFiClient WiFiClient;
 PubSubClient client(WiFiClient);
 
 void setup() {
-
+  HTTPClient http;
   pinMode(LEDBLUE, OUTPUT);
   pinMode(RELAY, OUTPUT);
   digitalWrite(RELAY, LOW);
@@ -40,6 +41,22 @@ void setup() {
   Serial.println(WiFi.localIP());
   WiFi.printDiag(Serial);
 
+  String Url = "http://io.adafruit.com/api/v2/" + USERNAME + PREAMBLE + T_COMMAND + "/data/retain/?X-AIO-Key=" MQTT_KEY;
+  http.begin(Url);
+  int httpCode = http.GET();
+  String payload = http.getString();
+  int pos = payload.indexOf(',');
+  if(pos != -1) {
+    String val = payload.substring(0, pos);
+    if(val.equals("ON")) {
+       digitalWrite(RELAY, HIGH);
+    } else {
+       digitalWrite(RELAY, LOW);
+    }
+  } else {
+    digitalWrite(RELAY, HIGH);
+  }
+  http.end();
   client.setServer(SERVER, SERVERPORT);
   client.setCallback(callback);
 }
@@ -52,9 +69,9 @@ void loop() {
     digitalWrite(LEDBLUE, LOW);
     if (client.connect("", MQTT_USERNAME, MQTT_KEY)) {
       digitalWrite(LEDBLUE, HIGH);
-      Serial.println("connected");     
-      client.publish(USERNAME PREAMBLE T_COMMAND, "ON");
-      client.subscribe(USERNAME PREAMBLE T_COMMAND, 1);
+      Serial.println("connected");  
+      String topic = USERNAME + PREAMBLE + T_COMMAND;
+      client.subscribe(topic.c_str(), 1);
       
     } else {
       Serial.print("failed, rc=");
@@ -79,8 +96,8 @@ void callback(char* topic, byte * data, unsigned int length) {
   }
   Serial.println();
   if (memcmp(data, "OFF", length) == 0)  {    
-    digitalWrite(RELAY, HIGH);
-  } else if(memcmp(data, "ON", length) == 0){    
     digitalWrite(RELAY, LOW);
+  } else if(memcmp(data, "ON", length) == 0){    
+    digitalWrite(RELAY, HIGH);
   }
 }
